@@ -1,8 +1,16 @@
 package repository
 
-import "github.com/jasonsavage/financeflow/internal/models"
+import (
+	"context"
+	"time"
+
+	"github.com/jasonsavage/financeflow/internal/models"
+)
 
 type DatabaseRepo interface {
 	RegisterUser(username, password string) (*models.User, error)
 	AuthenticateUser(username, password string) (*models.User, error)
+	SaveTransactions(ctx context.Context, transactions []models.Transaction) (int, error)
+	GetTransactions(ctx context.Context, accountID string, from, to *time.Time) ([]models.Transaction, error)
+	Ping(ctx context.Context) error
 }

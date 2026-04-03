@@ -4,6 +4,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/jasonsavage/financeflow/internal/handlers"
+	"github.com/jasonsavage/financeflow/internal/middleware"
 	"github.com/jasonsavage/financeflow/internal/repository"
 )
 
@@ -24,18 +25,22 @@ func Register(repo repository.DatabaseRepo) *chi.Mux {
 		r.Post("/login", authHandler.Login)
 	})
 
-	// Protected routes
-	// r.Group(func(r chi.Router) {
-	// 	r.Use(middleware.RequireAuth)
+	hcHandler := handlers.NewHealthcheckHandler(repo)
+	txHandler := handlers.NewTransactionHandler(repo)
 
-	// 	r.Route("/accounts", func(r chi.Router) {
-	// 		r.Get("/", accountHandler.List)
-	// 		r.Post("/", accountHandler.Create)
-	// 		r.Get("/{id}", accountHandler.Get)
-	// 		r.Put("/{id}", accountHandler.Update)
-	// 		r.Delete("/{id}", accountHandler.Delete)
-	// 	})
-	// })
+	// Public routes
+	r.Get("/healthcheck", hcHandler.Check)
+
+	// Protected routes
+	r.Group(func(r chi.Router) {
+		r.Use(middleware.RequireAuth)
+
+		r.Route("/transactions", func(r chi.Router) {
+			r.Post("/upload", txHandler.UploadTransactions)
+			r.Get("/list", txHandler.ListTransactions)
+		})
+
+	})
 
 	return r
 }

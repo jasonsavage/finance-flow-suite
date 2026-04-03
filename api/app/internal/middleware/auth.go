@@ -12,6 +12,7 @@ import (
 type contextKey string
 
 const UserIDKey contextKey = "userID"
+const AccountIDKey contextKey = "accountID"
 
 func RequireAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -45,9 +46,12 @@ func RequireAuth(next http.Handler) http.Handler {
 			return
 		}
 
-		// Store userID in request context for use in handlers
+		// Store userID and accountID in request context for use in handlers
 		userID := int(claims["sub"].(float64))
+		accountID, _ := claims["act"].(string)
+
 		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		ctx = context.WithValue(ctx, AccountIDKey, accountID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

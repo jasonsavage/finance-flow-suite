@@ -62,3 +62,77 @@ func (r *postgresDBRepo) AuthenticateUser(username, password string) (*models.Us
 
 	return &u, nil
 }
+
+func (r *postgresDBRepo) SaveTransactions(ctx context.Context, transactions []models.Transaction) (int, error) {
+	if len(transactions) == 0 {
+		return 0, nil
+	}
+
+	var inserted int
+	for _, t := range transactions {
+		res, err := r.DB.Exec(ctx, `
+			INSERT INTO transactions (
+				transaction_id, account_id, date, description, category, 
+				deposit, withdrawal, bank_account_name, created_at, updated_at
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+			ON CONFLICT (transaction_id) DO NOTHING
+		`, t.TransactionID, t.AccountID, t.Date, t.Description, t.Category,
+			t.Deposit, t.Withdrawal, t.BankAccountName, t.CreatedAt, t.UpdatedAt)
+
+		if err != nil {
+			return inserted, fmt.Errorf("failed to insert transaction: %w", err)
+		}
+		if res.RowsAffected() > 0 {
+			inserted++
+		}
+	}
+
+	return inserted, nil
+}
+
+func (r *postgresDBRepo) GetTransactions(ctx context.Context, accountID string, from, to *time.Time) ([]models.Transaction, error) {
+	query := `SELECT transaction_id, account_id, date, description, category, deposit, withdrawal, bank_account_name, created_at, updated_at FROM transactions WHERE account_id = $1`
+	args := []interface{}{accountID}
+	
+	if from != nil {
+		args = append(args, *from)
+		query += fmt.Sprintf(" AND date >= $%d", len(args))
+	}
+	if to != nil {
+		args = append(args, *to)
+		query += fmt.Sprintf(" AND date <= $%d", len(args))
+	}
+
+	query += " ORDER BY date DESC"
+
+	rows, err := r.DB.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query transactions: %w", err)
+	}
+	defer rows.Close()
+
+	// Initialize as empty slice rather than nil so it serializes as [] in JSON when empty
+	transactions := make([]models.Transaction, 0)
+	for rows.Next() {
+		var t models.Transaction
+		err := rows.Scan(
+			&t.TransactionID, &t.AccountID, &t.Date, &t.Description, 
+			&t.Category, &t.Deposit, &t.Withdrawal, &t.BankAccountName, 
+			&t.CreatedAt, &t.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan transaction: %w", err)
+		}
+		transactions = append(transactions, t)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("rows iteration error: %w", err)
+	}
+
+	return transactions, nil
+}
+
+func (r *postgresDBRepo) Ping(ctx context.Context) error {
+	return r.DB.Ping(ctx)
+}
