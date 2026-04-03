@@ -10,19 +10,16 @@ CREATE TABLE IF NOT EXISTS users (
     updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE IF NOT EXISTS accounts (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(50) NOT NULL CHECK (
-        type IN (
-            'checking',
-            'savings',
-            'credit',
-            'investment'
-        )
-    ),
-    balance NUMERIC(12, 2) NOT NULL DEFAULT 0.00,
-    currency VARCHAR(10) NOT NULL DEFAULT 'USD',
+CREATE TABLE IF NOT EXISTS transactions (
+    transaction_id VARCHAR(255) PRIMARY KEY,
+    account_id VARCHAR(255) NOT NULL,
+    date DATE NOT NULL,
+    description VARCHAR(255) NOT NULL,
+    category VARCHAR(255),
+    deposit DECIMAL(10, 2) NOT NULL,
+    withdrawal DECIMAL(10, 2) NOT NULL,
+    bank_account_name VARCHAR(255) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    FOREIGN KEY (account_id) REFERENCES users(account_id) ON DELETE CASCADE
 );

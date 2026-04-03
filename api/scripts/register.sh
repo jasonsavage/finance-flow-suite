@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./register-user.sh [url] [username] [password]
+# Usage: ./register.sh
 URL="http://localhost:8080/auth/register"
 USERNAME="jason.savage2@gmail.com"
 PASSWORD="password123"

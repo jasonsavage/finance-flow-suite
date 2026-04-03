@@ -6,12 +6,11 @@ After login, the user will be able to upload *.csv files from their bank which w
 
 The database will need to store the following information:
 
-- id: SERIAL PRIMARY KEY
-- account_id: VARCHAR(255) NOT NULL UNIQUE
-- transaction_id: VARCHAR(255) NOT NULL UNIQUE
+- transaction_id: VARCHAR(255) NOT NULL UNIQUE PRIMARY KEY
+- account_id: VARCHAR(255) NOT NULL
 - date: DATE NOT NULL
 - description: VARCHAR(255) NOT NULL
-- category: VARCHAR(255) NOT NULL
+- category: VARCHAR(255)
 - deposit: DECIMAL(10, 2) NOT NULL
 - withdrawal: DECIMAL(10, 2) NOT NULL
 - bank_account_name: VARCHAR(255) NOT NULL
@@ -24,7 +23,7 @@ The database will need to store the following information:
 The transaction endpoints are exposed under the protected middleware route `/transactions` which requires a valid JWT token to access.
 
 - **`POST /transactions/upload?bankAccount=Chase Checking`**: 
-  - **Payload**: `bankAccount` query parameter and *.csv file content in the request body.
+  - **Payload**: `bankAccount` query parameter and *.csv file content in the request body which should use the standard multipart/form-data uploads.
   - **Logic**: Parses the *.csv file content and saves the transactions to the database. Returns a 200 OK upon success along with the number of transactions uploaded.
 
 - **`GET /transactions/list?from=YYYY-MM-DD&to=YYYY-MM-DD`**: 
@@ -35,7 +34,7 @@ The transaction endpoints are exposed under the protected middleware route `/tra
   
   ## 3. CSV Parsing Logic
 
-  The CSV parsing logic should be implemented in a way that it can handle different CSV formats from different banks. 
+  The CSV parsing logic should be implemented in a way that it can handle different CSV formats from different banks. This utility or group of utilities should be part of the "helpers" package.
 
   **Step 1**: Generate a unique ID for each transaction by hashing the row data and use it to populate the `transaction_id` field. This will allow future deduping of transactions. 
 
@@ -51,7 +50,7 @@ The transaction endpoints are exposed under the protected middleware route `/tra
     - each transaction has either a `credit` or `debit` column. The `credit` column maps to the `deposit` column and the `debit` column maps to the `withdrawal` column.
     
   - Type/Amount format
-    - each transaction has a `type` column which can be either "credit" or "debit". If the type is "credit", the `deposit` column is populated with the amount. If the type is "debit", the `withdrawal` column is populated with the amount.
+    - each transaction has a `type` column which can be either "credit" or "debit" (convert to lowercase before comparison). If the type is "credit", the `deposit` column is populated with the amount. If the type is "debit", the `withdrawal` column is populated with the amount. Both columns `type` and `amount` may contain other words so you will have to search for each column instead of doing s direct match.
 
   - Positive/Negative format
     - each transaction only has an amount column and the value is prefixed with either a "+" or "-". If the amount is prefixed with a "-", the value should be mapped to the `withdrawal` column otherwise the value should be mapped to the `deposit` column. The prefix should be removed before mapping the value to the column.
@@ -66,5 +65,5 @@ Create a shell script in the `/scripts` directory to test the implementation on 
 
 - **`transaction_upload.sh`**: Should accept 2 arguments: the path to the CSV file and the bank account name. It should then upload the CSV file to the database and return the number of transactions uploaded.
 
-
+- **`transactions.sh`**: Should fetch all transactions from the authenticated user's account and write them to a file named `transactions.json` in the `/scripts` directory.
   

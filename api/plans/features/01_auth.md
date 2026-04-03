@@ -6,7 +6,7 @@ This document details the complete implementation of the basic authorization flo
 
 A `users` table has been created via the `001_create_tables.sql` migration, containing the following fields:
 - `id`: `SERIAL PRIMARY KEY` for internal relational mapping.
-- `account_id`: `VARCHAR(255) NOT NULL UNIQUE`. A unique identifier generated automatically during user registration (e.g., `ACC-123...`).
+- `account_id`: `VARCHAR(255) NOT NULL UNIQUE`. A unique identifier generated automatically during user registration prefixed with `ACC-` (e.g., `ACC-123...`).
 - `username`: `VARCHAR(255) NOT NULL UNIQUE`. Serves as the primary login identifier (often an email).
 - `password_hash`: `VARCHAR(255) NOT NULL`. Stores the securely hashed equivalent of the user's password using `bcrypt`.
 - `first_name`: `VARCHAR(255) NOT NULL`. Initialized as an empty string during registration.
